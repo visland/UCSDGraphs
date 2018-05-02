@@ -165,7 +165,8 @@ public class MapGraph {
       nodeSearched.accept(curr);
       // Finds all the ends of the current node and add the end to queue if not visited.
       for (GeographicPoint end : vertice.get(curr).getAllEnds()) {
-        if (!visited.contains(end)) {
+        if (visited.contains(end)) continue;
+//        if (!visited.contains(end)) {
           q.add(end);
           visited.add(end);
           // Adds current node as the parent of this end.
@@ -183,7 +184,7 @@ public class MapGraph {
             Collections.reverse(r);
             return r;
           }
-        }
+//        }
       }
     }
     return null;

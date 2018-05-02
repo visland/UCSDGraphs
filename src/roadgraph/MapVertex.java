@@ -14,6 +14,7 @@ public class MapVertex {
     return edges;
   }
   
+  // Returns GeographicPoint locations of all ends.
   public List<GeographicPoint> getAllEnds(){
     List<GeographicPoint> result = new ArrayList<GeographicPoint>();
     for (MapEdge mEdge : edges) {
