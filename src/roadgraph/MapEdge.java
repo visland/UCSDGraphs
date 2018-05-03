@@ -2,7 +2,7 @@ package roadgraph;
 
 import geography.GeographicPoint;
 
-public class MapEdge {
+public class MapEdge{
   public MapEdge(GeographicPoint _start, GeographicPoint _end, String _roadName, String _roadType,
       double _distance) {
     start = _start;
@@ -14,6 +14,10 @@ public class MapEdge {
 
   public GeographicPoint getEnd() {
     return end;
+  }
+
+  public double getDistance() {
+    return distance;
   }
 
   private GeographicPoint start;

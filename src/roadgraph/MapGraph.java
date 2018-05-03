@@ -13,11 +13,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Set;
 import java.util.function.Consumer;
-
-import com.sun.corba.se.spi.orbutil.fsm.Guard.Result;
 
 import geography.GeographicPoint;
 import util.GraphLoader;
@@ -87,7 +86,7 @@ public class MapGraph {
     if (location == null || vertice.containsKey(location)) {
       return false;
     } else {
-      vertice.put(location, new MapVertex());
+      vertice.put(location, new MapVertex(location));
       numVertices++;
       return true;
     }
@@ -156,35 +155,33 @@ public class MapGraph {
     HashMap<GeographicPoint, GeographicPoint> parent = new HashMap<GeographicPoint, GeographicPoint>();
     HashSet<GeographicPoint> visited = new HashSet<GeographicPoint>();
     GeographicPoint curr;
-
     q.add(start);
     while (!q.isEmpty()) {
       curr = q.remove();
       visited.add(curr);
       // Hook for visualization. See writeup.
       nodeSearched.accept(curr);
-      // Finds all the ends of the current node and add the end to queue if not visited.
+      // Finds all the ends of current node and add end to queue if not visited.
       for (GeographicPoint end : vertice.get(curr).getAllEnds()) {
-        if (visited.contains(end)) continue;
-//        if (!visited.contains(end)) {
-          q.add(end);
-          visited.add(end);
-          // Adds current node as the parent of this end.
-          parent.put(end, curr);
-          // Returns result when one of the ends of current node is the goal.
-          if (end.distance(goal) == 0) {
-            List<GeographicPoint> r = new ArrayList<GeographicPoint>();
-            r.add(goal);
-            // Traces through HashMap(parent) to find the route from goal to start.
-            GeographicPoint child = goal;
-            while (parent.get(child) != null) {
-              child = parent.get(child);
-              r.add(child);
-            }
-            Collections.reverse(r);
-            return r;
+        if (visited.contains(end))
+          continue;
+        q.add(end);
+        visited.add(end);
+        // Adds current node as the parent of this end.
+        parent.put(end, curr);
+        // Returns result when one of the ends of current node is the goal.
+        if (end.distance(goal) == 0) {
+          List<GeographicPoint> r = new ArrayList<GeographicPoint>();
+          r.add(goal);
+          // Traces through HashMap(parent) to find the route from goal to start.
+          GeographicPoint child = goal;
+          while (parent.get(child) != null) {
+            child = parent.get(child);
+            r.add(child);
           }
-//        }
+          Collections.reverse(r);
+          return r;
+        }
       }
     }
     return null;
@@ -221,13 +218,43 @@ public class MapGraph {
    * @return The list of intersections that form the shortest path from start to
    *         goal (including both start and goal).
    */
+
   public List<GeographicPoint> dijkstra(GeographicPoint start, GeographicPoint goal,
       Consumer<GeographicPoint> nodeSearched) {
-    // TODO: Implement this method in WEEK 4
+    PriorityQueue<MapVertex> pq = new PriorityQueue<MapVertex>();
+    HashMap<GeographicPoint, GeographicPoint> parent = new HashMap<GeographicPoint, GeographicPoint>();
+    HashSet<GeographicPoint> visited = new HashSet<GeographicPoint>();
+    GeographicPoint curr = start;
 
-    // Hook for visualization. See writeup.
-    // nodeSearched.accept(next.getLocation());
-
+    pq.add(vertice.get(start));
+    vertice.get(start).currDistance = 0;
+    while (!pq.isEmpty()) {
+      curr = pq.poll().getLocation();
+      visited.add(curr);
+      // Hook for visualization. See writeup.
+      nodeSearched.accept(curr);
+      if (curr.distance(goal) == 0) {
+        List<GeographicPoint> r = new ArrayList<GeographicPoint>();
+        r.add(goal);
+        // Traces through HashMap(parent) to find the route from goal to start.
+        GeographicPoint child = goal;
+        while (parent.get(child) != null) {
+          child = parent.get(child);
+          r.add(child);
+        }
+        Collections.reverse(r);
+        return r;
+      }
+      for (GeographicPoint end : vertice.get(curr).getAllEnds()) {
+        if (visited.contains(end))
+          continue;
+        if (vertice.get(curr).currDistance + vertice.get(curr).getEdgeDistance(end) < vertice.get(end).currDistance) {
+          vertice.get(end).currDistance = vertice.get(curr).currDistance + vertice.get(curr).getEdgeDistance(end);
+          parent.put(end, curr);
+          pq.add(vertice.get(end));
+        }
+      }
+    }
     return null;
   }
 
@@ -262,12 +289,42 @@ public class MapGraph {
    *         goal (including both start and goal).
    */
   public List<GeographicPoint> aStarSearch(GeographicPoint start, GeographicPoint goal,
-      Consumer<GeographicPoint> nodeSearched) {
-    // TODO: Implement this method in WEEK 4
+      Consumer<GeographicPoint> nodeSearched) { 
+    PriorityQueue<MapVertex> pq = new PriorityQueue<MapVertex>();
+    HashMap<GeographicPoint, GeographicPoint> parent = new HashMap<GeographicPoint, GeographicPoint>();
+    HashSet<GeographicPoint> visited = new HashSet<GeographicPoint>();
+    GeographicPoint curr = start;
 
-    // Hook for visualization. See writeup.
-    // nodeSearched.accept(next.getLocation());
-
+    pq.add(vertice.get(start));
+    vertice.get(start).currDistance = 0;
+    while (!pq.isEmpty()) {
+      curr = pq.poll().getLocation();
+      visited.add(curr);
+      vertice.get(curr).endDistance = curr.distance(goal);
+      // Hook for visualization. See writeup.
+      nodeSearched.accept(curr);
+      if (curr.distance(goal) == 0) {
+        List<GeographicPoint> r = new ArrayList<GeographicPoint>();
+        r.add(goal);
+        // Traces through HashMap(parent) to find the route from goal to start.
+        GeographicPoint child = goal;
+        while (parent.get(child) != null) {
+          child = parent.get(child);
+          r.add(child);
+        }
+        Collections.reverse(r);
+        return r;
+      }
+      for (GeographicPoint end : vertice.get(curr).getAllEnds()) {
+        if (visited.contains(end))
+          continue;
+        if (vertice.get(curr).currDistance + vertice.get(curr).getEdgeDistance(end) < vertice.get(end).currDistance) {
+          vertice.get(end).currDistance = vertice.get(curr).currDistance + vertice.get(curr).getEdgeDistance(end);
+          parent.put(end, curr);
+          pq.add(vertice.get(end));
+        }
+      }
+    }
     return null;
   }
 
